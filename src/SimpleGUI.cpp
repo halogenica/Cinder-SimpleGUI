@@ -34,36 +34,57 @@
 #include "cinder/Utilities.h"
 #include "cinder/Font.h"
 #include "cinder/CinderMath.h"
+#include "System/Resources.h"
 
 namespace mowa { namespace sgui {
 	
 //-----------------------------------------------------------------------------
 
-Font SimpleGUI::textFont = Font();
-ColorA SimpleGUI::darkColor = ColorA(0.3, 0.3, 0.3, 1);
-ColorA SimpleGUI::lightColor = ColorA(1, 1, 1, 1);
-ColorA SimpleGUI::bgColor = ColorA(0, 0, 0, 0.5);
-ColorA SimpleGUI::textColor = ColorA(1,1,1,1);	
-float SimpleGUI::spacing = 7;
-Vec2f SimpleGUI::padding = Vec2f(3, 3);
-Vec2f SimpleGUI::sliderSize = Vec2f(125, 10);
-Vec2f SimpleGUI::labelSize = Vec2f(125, 10);
-Vec2f SimpleGUI::separatorSize = Vec2f(125, 1);
+Rectf SimpleGUI::textBoundsRect;
+gl::TextureFontRef SimpleGUI::textFont;
+ColorA SimpleGUI::darkColor = ColorA(0.3f, 0.3f, 0.3f, 1.f);
+ColorA SimpleGUI::lightColor = ColorA(1.f, 1.f, 1.f, 1.f);
+ColorA SimpleGUI::bgColor = ColorA(0.f, 0.f, 0.f, 0.5f);
+ColorA SimpleGUI::textColor = ColorA(1.f,1.f,1.f,1.f);	
+float SimpleGUI::spacing = 7.f;
+Vec2f SimpleGUI::padding = Vec2f(3.f, 3.f);
+Vec2f SimpleGUI::sliderSize = Vec2f(125.f, 10.f);
+Vec2f SimpleGUI::labelSize = Vec2f(125.f, 10.f);
+Vec2f SimpleGUI::separatorSize = Vec2f(125.f, 1.f);
 	
 SimpleGUI::SimpleGUI(App* app) {
 	init(app);
 	enabled = true;
 }
+    
+SimpleGUI::SimpleGUI(AppNative* app) {
+    init(app);
+    enabled = true;
+}
 	
-void SimpleGUI::init(App* app) {	
-	textFont = Font(loadResource("pf_tempesta_seven.ttf"), 8);
-	//textFont = Font("Arial", 12);
+void SimpleGUI::init(App* app) {
+    textFont = gl::TextureFont::create(Font(loadResource(RES_SGUI_FONT), 8));
+    //textFont = gl::TextureFont::create(Font("Arial", 12));
+    textBoundsRect = Rectf(0.f, SimpleGUI::textFont->getAscent(), getWindowWidth(), getWindowHeight());
 	selectedControl = NULL;
-	cbMouseDown = app->registerMouseDown( this, &SimpleGUI::onMouseDown );
-	cbMouseUp = app->registerMouseUp( this, &SimpleGUI::onMouseUp );	
-	cbMouseDrag = app->registerMouseDrag( this, &SimpleGUI::onMouseDrag );
+    app->getWindow()->connectMouseDown(&SimpleGUI::onMouseDown, this);
+    app->getWindow()->connectMouseUp(&SimpleGUI::onMouseUp, this);
+    app->getWindow()->connectMouseDrag(&SimpleGUI::onMouseDrag, this);
 }
 
+void SimpleGUI::init(AppNative* app) {
+    textFont = gl::TextureFont::create(Font(loadResource(RES_SGUI_FONT), 8));
+    //textFont = gl::TextureFont::create(Font("Arial", 12));
+    textBoundsRect = Rectf(0.f, SimpleGUI::textFont->getAscent(), getWindowWidth(), getWindowHeight());
+    selectedControl = NULL;
+    app->getWindow()->connectMouseDown(&SimpleGUI::onMouseDown, this);
+    app->getWindow()->connectMouseUp(&SimpleGUI::onMouseUp, this);
+    app->getWindow()->connectMouseDrag(&SimpleGUI::onMouseDrag, this);
+    app->getWindow()->connectTouchesBegan(&SimpleGUI::onTouchesBegan, this);
+    app->getWindow()->connectTouchesMoved(&SimpleGUI::onTouchesMoved, this);
+    app->getWindow()->connectTouchesEnded(&SimpleGUI::onTouchesEnded, this);
+}
+    
 FloatVarControl* SimpleGUI::addParam(const std::string& paramName, float* var, float min, float max, float defaultValue) {
 	FloatVarControl* control = new FloatVarControl(paramName, var, min, max, defaultValue);
 	control->parentGui = this;
@@ -85,7 +106,7 @@ BoolVarControl* SimpleGUI::addParam(const std::string& paramName, bool* var, boo
 	return control;
 }
 	
-ColorVarControl* SimpleGUI::addParam(const std::string& paramName, ColorA* var, ColorA defaultValue, int colorModel) {
+ColorVarControl* SimpleGUI::addParam(const std::string& paramName, ColorA* var, ColorA defaultValue, ColorModel colorModel) {
 	ColorVarControl* control = new ColorVarControl(paramName, var, defaultValue, colorModel);
 	control->parentGui = this;	
 	controls.push_back(control);
@@ -265,14 +286,48 @@ bool SimpleGUI::onMouseUp(MouseEvent event) {
 	
 bool SimpleGUI::onMouseDrag(MouseEvent event) {
 	if (!enabled) return false;
-	
-	mousePos = event.getPos();
-	
+		
 	if (selectedControl) {
 		selectedControl->onMouseDrag(event);
 		return true;
 	}
 	return false;
+}
+
+bool SimpleGUI::onTouchesBegan(TouchEvent event) {
+    if (!enabled) return false;
+    
+    std::vector<Control*>::iterator it = controls.begin();
+    while(it != controls.end()) {
+        Control* control = *it++;
+        if (control->activeArea.contains(event.getTouches().begin()->getPos())) {
+            selectedControl = control;
+            selectedControl->onTouchesBegan(event);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool SimpleGUI::onTouchesEnded(TouchEvent event) {
+    if (!enabled) return false;
+    
+    if (selectedControl != NULL) {
+        selectedControl->onTouchesEnded(event);
+        selectedControl = NULL;
+        return true;
+    }
+    return false;
+}
+
+bool SimpleGUI::onTouchesMoved(TouchEvent event) {
+    if (!enabled) return false;
+    
+    if (selectedControl) {
+        selectedControl->onTouchesMoved(event);
+        return true;
+    }
+    return false;
 }
 	
 Vec2f SimpleGUI::getStringSize(const std::string& str) {
@@ -358,7 +413,8 @@ Vec2f FloatVarControl::draw(Vec2f pos) {
 		(pos + SimpleGUI::labelSize + SimpleGUI::sliderSize + SimpleGUI::padding*2).y)
 	);	
 	
-	gl::drawString(name, pos, SimpleGUI::textColor, SimpleGUI::textFont);
+	gl::color(SimpleGUI::textColor);
+    SimpleGUI::textFont->drawStringWrapped(name, SimpleGUI::textBoundsRect, pos);
 	
 	gl::color(SimpleGUI::darkColor);
 	gl::drawSolidRect(activeArea);
@@ -387,6 +443,16 @@ void FloatVarControl::onMouseDown(MouseEvent event) {
 void FloatVarControl::onMouseDrag(MouseEvent event) {
 	float value = (event.getPos().x - activeArea.x1)/(activeArea.x2 - activeArea.x1);
 	value = math<float>::max(0.0, math<float>::min(value, 1.0));	
+	setNormalizedValue(value);
+}
+    
+void FloatVarControl::onTouchesBegan(TouchEvent event) {
+    onTouchesMoved(event);
+}
+    
+void FloatVarControl::onTouchesMoved(TouchEvent event) {
+	float value = (event.getTouches().begin()->getPos().x - activeArea.x1)/(activeArea.x2 - activeArea.x1);
+	value = math<float>::max(0.0, math<float>::min(value, 1.0));
 	setNormalizedValue(value);
 }
 	
@@ -436,7 +502,8 @@ Vec2f IntVarControl::draw(Vec2f pos) {
 							(pos + SimpleGUI::labelSize + SimpleGUI::sliderSize + SimpleGUI::padding*2).y)
 					  );	
 	
-	gl::drawString(name, pos, SimpleGUI::textColor, SimpleGUI::textFont);
+	gl::color(SimpleGUI::textColor);
+    SimpleGUI::textFont->drawStringWrapped(name, SimpleGUI::textBoundsRect, pos);
 	
 	gl::color(SimpleGUI::darkColor);
 	gl::drawSolidRect(activeArea);
@@ -467,7 +534,17 @@ void IntVarControl::onMouseDrag(MouseEvent event) {
 	value = math<float>::max(0.0, math<float>::min(value, 1.0));	
 	setNormalizedValue(value);
 }
-	
+
+void IntVarControl::onTouchesBegan(TouchEvent event) {
+    onTouchesMoved(event);
+}
+
+void IntVarControl::onTouchesMoved(TouchEvent event) {
+    float value = (event.getTouches().begin()->getPos().x - activeArea.x1)/(activeArea.x2 - activeArea.x1);
+    value = math<float>::max(0.0, math<float>::min(value, 1.0));
+    setNormalizedValue(value);
+}
+    
 //-----------------------------------------------------------------------------
 	
 BoolVarControl::BoolVarControl(const std::string& name, bool* var, bool defaultValue, int groupId) {
@@ -487,7 +564,10 @@ Vec2f BoolVarControl::draw(Vec2f pos) {
 		(pos + SimpleGUI::sliderSize + SimpleGUI::padding).x, 
 		(pos + SimpleGUI::sliderSize + SimpleGUI::padding).y)
 	);
-	gl::drawString(name, Vec2f(pos.x + SimpleGUI::sliderSize.y + SimpleGUI::padding.x*2, pos.y), SimpleGUI::textColor, SimpleGUI::textFont);					
+	
+	gl::color(SimpleGUI::textColor);
+    SimpleGUI::textFont->drawStringWrapped(name, SimpleGUI::textBoundsRect, Vec2f(pos.x + SimpleGUI::sliderSize.y + SimpleGUI::padding.x*2, pos.y));
+    
 	gl::color((*var) ? SimpleGUI::lightColor : SimpleGUI::darkColor);
 	gl::drawSolidRect(activeArea);
 	pos.y += SimpleGUI::sliderSize.y + SimpleGUI::spacing;	
@@ -517,10 +597,23 @@ void BoolVarControl::onMouseDown(MouseEvent event) {
 		*this->var = ! *this->var;
 	}
 }
-	
+
+void BoolVarControl::onTouchesBegan(TouchEvent event) {
+    if (groupId > -1) {
+        for(std::vector<Control*>::iterator it2 = parentGui->getControls().begin(); it2 != parentGui->getControls().end(); it2++) {
+            if (((*it2)->type == Control::BOOL_VAR) && (((BoolVarControl*)(*it2))->groupId == this->groupId)) {
+                *((BoolVarControl*)(*it2))->var = (*it2 == this);
+            }
+        }
+    }
+    else {
+        *this->var = ! *this->var;
+    }
+}
+    
 //-----------------------------------------------------------------------------
 
-ColorVarControl::ColorVarControl(const std::string& name, ColorA* var, ColorA defaultValue, int colorModel) {
+    ColorVarControl::ColorVarControl(const std::string& name, ColorA* var, ColorA defaultValue, SimpleGUI::ColorModel colorModel) {
 	this->type = Control::COLOR_VAR;
 	this->name = name;
 	this->var = var;
@@ -569,7 +662,7 @@ Vec2f ColorVarControl::draw(Vec2f pos) {
 	if (colorModel == SimpleGUI::RGB) {
 		values = Vec4f(var->r, var->g, var->b, var->a);
 	}
-	else {
+	else if (colorModel == SimpleGUI::HSV) {
 		Vec3f hsv = rgbToHSV(*var);
 		values.x = hsv.x;
 		values.y = hsv.y;
@@ -585,7 +678,9 @@ Vec2f ColorVarControl::draw(Vec2f pos) {
 		(pos + SimpleGUI::labelSize + SimpleGUI::sliderSize*4 + SimpleGUI::padding*5).y)
 	);
 	
-	gl::drawString(name, pos, SimpleGUI::textColor, SimpleGUI::textFont);	
+	gl::color(SimpleGUI::textColor);
+    SimpleGUI::textFont->drawStringWrapped(name, SimpleGUI::textBoundsRect, pos);
+    
 	gl::color(SimpleGUI::darkColor);
 	gl::drawSolidRect(activeArea1);
 	gl::drawSolidRect(activeArea2);
@@ -613,14 +708,14 @@ std::string ColorVarControl::toString() {
 void ColorVarControl::fromString(std::string& strValue) {
 	std::vector<std::string> strs;
 	boost::split(strs, strValue, boost::is_any_of("\t "));
-	var->r = boost::lexical_cast<double>(strs[0]);
-	var->g = boost::lexical_cast<double>(strs[1]);	
-	var->b = boost::lexical_cast<double>(strs[2]);	
-	var->a = boost::lexical_cast<double>(strs[3]);	
+	var->r = boost::lexical_cast<float>(strs[0]);
+	var->g = boost::lexical_cast<float>(strs[1]);	
+	var->b = boost::lexical_cast<float>(strs[2]);	
+	var->a = boost::lexical_cast<float>(strs[3]);	
 }
 	
 	
-void ColorVarControl::onMouseDown(MouseEvent event) {	
+void ColorVarControl::onMouseDown(MouseEvent event) {
 	if (activeArea1.contains(event.getPos())) {
 		activeTrack = 1;
 	}
@@ -636,7 +731,7 @@ void ColorVarControl::onMouseDown(MouseEvent event) {
 	onMouseDrag(event);
 }
 	
-void ColorVarControl::onMouseDrag(MouseEvent event) {	
+void ColorVarControl::onMouseDrag(MouseEvent event) {
 	float value = (event.getPos().x - activeArea.x1)/(activeArea.x2 - activeArea.x1);
 	value = math<float>::max(0.0, math<float>::min(value, 1.0));	
 	
@@ -648,7 +743,7 @@ void ColorVarControl::onMouseDrag(MouseEvent event) {
 			case 4: var->a = value; break;				
 		}
 	}
-	else {
+	else if (colorModel == SimpleGUI::HSV) {
 		Vec3f hsv = rgbToHSV(*var);
 		switch (activeTrack) {
 			case 1: hsv.x = value; break;
@@ -658,6 +753,46 @@ void ColorVarControl::onMouseDrag(MouseEvent event) {
 		}
 		*var = ColorA(CM_HSV, hsv.x, hsv.y, hsv.z, var->a);
 	}
+}
+    
+void ColorVarControl::onTouchesBegan(TouchEvent event) {
+    if (activeArea1.contains(event.getTouches().begin()->getPos())) {
+        activeTrack = 1;
+    }
+    else if (activeArea2.contains(event.getTouches().begin()->getPos())) {
+        activeTrack = 2;
+    }
+    else if (activeArea3.contains(event.getTouches().begin()->getPos())) {
+        activeTrack = 3;
+    }
+    else if (activeArea4.contains(event.getTouches().begin()->getPos())) {
+        activeTrack = 4;
+    }
+    onTouchesMoved(event);
+}
+    
+void ColorVarControl::onTouchesMoved(TouchEvent event) {
+	float value = (event.getTouches().begin()->getPos().x - activeArea.x1)/(activeArea.x2 - activeArea.x1);
+    value = math<float>::max(0.0, math<float>::min(value, 1.0));
+    
+    if (colorModel == SimpleGUI::RGB) {
+        switch (activeTrack) {
+            case 1: var->r = value; break;
+            case 2: var->g = value; break;
+            case 3: var->b = value; break;
+            case 4: var->a = value; break;
+        }
+    }
+    else if (colorModel == SimpleGUI::HSV) {
+        Vec3f hsv = rgbToHSV(*var);
+        switch (activeTrack) {
+            case 1: hsv.x = value; break;
+            case 2: hsv.y = value; break;
+            case 3: hsv.z = value; break;
+            case 4: var->a = value; break;				
+        }
+        *var = ColorA(CM_HSV, hsv.x, hsv.y, hsv.z, var->a);
+    }
 }
 	
 //-----------------------------------------------------------------------------	
@@ -686,9 +821,12 @@ Vec2f ButtonControl::draw(Vec2f pos) {
 	
 	
 	gl::color(pressed ? SimpleGUI::lightColor : SimpleGUI::darkColor);
-	gl::drawSolidRect(activeArea);				
-	gl::drawString(name, Vec2f(pos.x + SimpleGUI::padding.x * 2, pos.y + floor(SimpleGUI::padding.y * 0.5)), pressed ? SimpleGUI::darkColor : SimpleGUI::textColor, SimpleGUI::textFont);					
-	pos.y += SimpleGUI::sliderSize.y + SimpleGUI::spacing + SimpleGUI::padding.y;
+	gl::drawSolidRect(activeArea);
+    
+	gl::color(SimpleGUI::textColor);
+    SimpleGUI::textFont->drawStringWrapped(name, SimpleGUI::textBoundsRect, Vec2f(pos.x + SimpleGUI::padding.x * 2.f, pos.y + floor(SimpleGUI::padding.y * 0.5f)));
+    
+    pos.y += SimpleGUI::sliderSize.y + SimpleGUI::spacing + SimpleGUI::padding.y;
 	return pos;
 }
 	
@@ -698,7 +836,16 @@ void ButtonControl::onMouseDown(MouseEvent event) {
 }
 	
 void ButtonControl::onMouseUp(MouseEvent event) {
-	pressed = false;	
+	pressed = false;
+}
+    
+void ButtonControl::onTouchesBegan(TouchEvent event) {
+    pressed = true;
+    fireClick();
+}
+
+void ButtonControl::onTouchesEnded(TouchEvent event) {
+    pressed = false;
 }
 	
 void ButtonControl::fireClick() {
@@ -732,9 +879,12 @@ Vec2f LabelControl::draw(Vec2f pos) {
 		(pos - SimpleGUI::padding).y, 
 		(pos + SimpleGUI::sliderSize + SimpleGUI::padding).x, 
 		(pos + SimpleGUI::labelSize + SimpleGUI::padding).y
-	));				
-	gl::drawString(name, pos, SimpleGUI::textColor, SimpleGUI::textFont);					
-	pos.y += SimpleGUI::labelSize.y + SimpleGUI::spacing;		
+	));
+    
+	gl::color(SimpleGUI::textColor);
+    SimpleGUI::textFont->drawStringWrapped(name, SimpleGUI::textBoundsRect, pos);
+	
+    pos.y += SimpleGUI::labelSize.y + SimpleGUI::spacing;
 	return pos;
 }
 	

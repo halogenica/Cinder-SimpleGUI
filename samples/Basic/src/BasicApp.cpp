@@ -1,4 +1,4 @@
-#include "cinder/app/AppBasic.h"
+#include "cinder/app/AppNative.h"
 #include "SimpleGUI.h"
 #include <list>
 using namespace ci;
@@ -9,7 +9,7 @@ using namespace mowa::sgui;
 #define RENDER_TYPE_GROUP 1
 #define CONFIG_FILE "settings.sgui.txt"
 
-class BasicApp : public AppBasic {
+class BasicApp : public AppNative {
 private:
 	SimpleGUI* gui;
 	float rotation;
@@ -115,4 +115,4 @@ void BasicApp::draw() {
 }
 
 
-CINDER_APP_BASIC( BasicApp, RendererGl )
+CINDER_APP_NATIVE( BasicApp, RendererGl )

@@ -1,4 +1,4 @@
-#include "cinder/app/AppBasic.h"
+#include "cinder/app/AppNative.h"
 #include "cinder/gl/FBO.h"
 #include "SimpleGUI.h"
 #include <list>
@@ -10,7 +10,7 @@ using namespace mowa::sgui;
 #define RENDER_TYPE_GROUP 1
 #define CONFIG_FILE "settings.sgui.txt"
 
-class GroupingApp : public AppBasic {
+class GroupingApp : public AppNative {
 private:
 	SimpleGUI* gui;
 	PanelControl* strokePanel;
@@ -141,4 +141,4 @@ void GroupingApp::draw() {
 }
 
 
-CINDER_APP_BASIC( GroupingApp, RendererGl )
+CINDER_APP_NATIVE( GroupingApp, RendererGl )

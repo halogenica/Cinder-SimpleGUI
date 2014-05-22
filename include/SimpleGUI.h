@@ -29,8 +29,11 @@
 
 #include <vector>
 #include "cinder/app/App.h"
+#include "cinder/app/AppNative.h"
+#include "cinder/app/TouchEvent.h"
 #include "cinder/Text.h"
 #include "cinder/gl/Texture.h"
+#include "cinder/gl/TextureFont.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -56,15 +59,11 @@ class ColorVarControl;
 class SimpleGUI {
 private:
 	bool enabled;
-	Vec2f	mousePos;
 	std::vector<Control*> controls;
 	Control* selectedControl;
-	
-	CallbackId	cbMouseDown;
-	CallbackId	cbMouseUp;
-	CallbackId  cbMouseDrag;	
 
-	void	init(App* app);	
+	void	init(App* app);
+    void    init(AppNative* app);
 public:
 	static ColorA darkColor;
 	static ColorA lightColor;
@@ -75,20 +74,26 @@ public:
 	static Vec2f sliderSize;
 	static Vec2f labelSize;
 	static Vec2f separatorSize;
-	static Font textFont;
+	static gl::TextureFontRef textFont;
+    static Rectf textBoundsRect;
 	
-	enum {
+	enum ColorModel{
 		RGB,
 		HSV
 	};
 public:
 	SimpleGUI(App* app);
+    SimpleGUI(AppNative* app);
 	bool	isSelected() { return selectedControl != NULL; }
 	std::vector<Control*>& getControls() { return controls; }	
 	
 	bool	onMouseDown(MouseEvent event);
 	bool	onMouseUp(MouseEvent event);
 	bool	onMouseDrag(MouseEvent event);
+    
+    bool    onTouchesBegan(TouchEvent event);
+    bool    onTouchesMoved(TouchEvent event);
+    bool    onTouchesEnded(TouchEvent event);
 	
 	void	draw();
 	void	dump();
@@ -101,7 +106,7 @@ public:
 	FloatVarControl* 	addParam(const std::string& paramName, float* var, float min=0, float max=1, float defaultValue = 0);
 	IntVarControl*		addParam(const std::string& paramName, int* var, int min=0, int max=1, int defaultValue = 0);
 	BoolVarControl*		addParam(const std::string& paramName, bool* var, bool defaultValue = false, int groupId = -1);
-	ColorVarControl*	addParam(const std::string& paramName, ColorA* var, ColorA const defaultValue = ColorA(0, 1, 1, 1), int colorModel = RGB);
+	ColorVarControl*	addParam(const std::string& paramName, ColorA* var, ColorA const defaultValue = ColorA(0, 1, 1, 1), ColorModel colorModel = RGB);
 	TextureVarControl*	addParam(const std::string& paramName, gl::Texture* var, int scale = 1, bool flipVert = false);
 	
 	ButtonControl*		addButton(const std::string& buttonName);
@@ -151,6 +156,9 @@ public:
 	virtual void onMouseDown(MouseEvent event) {};
 	virtual void onMouseUp(MouseEvent event) {};
 	virtual void onMouseDrag(MouseEvent event) {};
+    virtual void onTouchesBegan(TouchEvent event) {};
+    virtual void onTouchesMoved(TouchEvent event) {};
+    virtual void onTouchesEnded(TouchEvent event) {};
 };
 	
 //-----------------------------------------------------------------------------
@@ -169,6 +177,8 @@ public:
 	void fromString(std::string& strValue);
 	void onMouseDown(MouseEvent event);	
 	void onMouseDrag(MouseEvent event);
+    void onTouchesBegan(TouchEvent event);
+    void onTouchesMoved(TouchEvent event);
 };
 	
 //-----------------------------------------------------------------------------
@@ -186,7 +196,9 @@ public:
 	std::string toString();	
 	void fromString(std::string& strValue);
 	void onMouseDown(MouseEvent event);	
-	void onMouseDrag(MouseEvent event);	
+	void onMouseDrag(MouseEvent event);
+    void onTouchesBegan(TouchEvent event);
+    void onTouchesMoved(TouchEvent event);
 };
 	
 //-----------------------------------------------------------------------------
@@ -201,26 +213,29 @@ public:
 	std::string toString();	
 	void fromString(std::string& strValue);
 	void onMouseDown(MouseEvent event);
+    void onTouchesBegan(TouchEvent event);
 };
 	
 //-----------------------------------------------------------------------------
 
 class ColorVarControl : public Control {
 public:
-	ColorA* var;
-	Rectf	activeArea1;
-	Rectf	activeArea2;
-	Rectf	activeArea3;
-	Rectf	activeArea4;	
-	int		activeTrack;
-	int		colorModel;
+	ColorA*                 var;
+	Rectf                   activeArea1;
+	Rectf                   activeArea2;
+	Rectf                   activeArea3;
+	Rectf                   activeArea4;
+	int                     activeTrack;
+    SimpleGUI::ColorModel   colorModel;
 public:
-	ColorVarControl(const std::string& name, ColorA* var, ColorA defaultValue, int colorModel);
+	ColorVarControl(const std::string& name, ColorA* var, ColorA defaultValue, SimpleGUI::ColorModel colorModel);
 	Vec2f draw(Vec2f pos);
 	std::string toString();	//saved as "r g b a"
 	void fromString(std::string& strValue); //expecting "r g b a"
 	void onMouseDown(MouseEvent event);	
 	void onMouseDrag(MouseEvent event);
+    void onTouchesBegan(TouchEvent event);
+    void onTouchesMoved(TouchEvent event);
 };
 	
 //-----------------------------------------------------------------------------
@@ -234,6 +249,8 @@ public:
 	Vec2f draw(Vec2f pos);
 	void onMouseDown(MouseEvent event);
 	void onMouseUp(MouseEvent event);
+    void onTouchesBegan(TouchEvent event);
+    void onTouchesEnded(TouchEvent event);
 
 	//! Registers a callback for Click events. Returns a unique identifier which can be used as a parameter to unregisterClick().
 	CallbackId		registerClick( std::function<bool (MouseEvent)> callback ) { return callbacksClick.registerCb( callback ); }
@@ -298,4 +315,4 @@ public:
 //-----------------------------------------------------------------------------
 
 } //namespace sgui
-} //namespace vrg
+} //namespace mowa

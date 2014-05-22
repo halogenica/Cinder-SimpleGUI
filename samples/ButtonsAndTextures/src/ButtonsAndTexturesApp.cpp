@@ -1,4 +1,4 @@
-#include "cinder/app/AppBasic.h"
+#include "cinder/app/AppNative.h"
 #include "cinder/gl/gl.h"
 #include "SimpleGUI.h"
 
@@ -10,7 +10,7 @@ using namespace mowa::sgui;
 
 #define CONFIG_FILE "settings.sgui.txt"
 
-class ButtonsAndTexturesApp : public AppBasic {
+class ButtonsAndTexturesApp : public AppNative {
 private:
     SimpleGUI* gui;
     Timer timer;
@@ -122,4 +122,4 @@ void ButtonsAndTexturesApp::draw(){
 }
 
 
-CINDER_APP_BASIC( ButtonsAndTexturesApp, RendererGl )
+CINDER_APP_NATIVE( ButtonsAndTexturesApp, RendererGl )
