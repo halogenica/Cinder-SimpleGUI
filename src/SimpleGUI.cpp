@@ -32,9 +32,7 @@
 #include <boost/lexical_cast.hpp>
 #include "SimpleGUI.h"
 #include "cinder/Utilities.h"
-#include "cinder/Font.h"
 #include "cinder/CinderMath.h"
-#include "System/Resources.h"
 
 namespace mowa { namespace sgui {
 	
@@ -52,18 +50,18 @@ Vec2f SimpleGUI::sliderSize = Vec2f(125.f, 10.f);
 Vec2f SimpleGUI::labelSize = Vec2f(125.f, 10.f);
 Vec2f SimpleGUI::separatorSize = Vec2f(125.f, 1.f);
 	
-SimpleGUI::SimpleGUI(App* app) {
-	init(app);
+SimpleGUI::SimpleGUI(App* app, const Font& font) {
+	init(app, font);
 	enabled = true;
 }
     
-SimpleGUI::SimpleGUI(AppNative* app) {
-    init(app);
+SimpleGUI::SimpleGUI(AppNative* app, const Font& font) {
+    init(app, font);
     enabled = true;
 }
 	
-void SimpleGUI::init(App* app) {
-    textFont = gl::TextureFont::create(Font(loadResource(RES_SGUI_FONT), 8));
+void SimpleGUI::init(App* app, const Font& font) {
+    textFont = gl::TextureFont::create(font);
     //textFont = gl::TextureFont::create(Font("Arial", 12));
     textBoundsRect = Rectf(0.f, SimpleGUI::textFont->getAscent(), getWindowWidth(), getWindowHeight());
 	selectedControl = NULL;
@@ -72,8 +70,8 @@ void SimpleGUI::init(App* app) {
     app->getWindow()->connectMouseDrag(&SimpleGUI::onMouseDrag, this);
 }
 
-void SimpleGUI::init(AppNative* app) {
-    textFont = gl::TextureFont::create(Font(loadResource(RES_SGUI_FONT), 8));
+void SimpleGUI::init(AppNative* app, const Font& font) {
+    textFont = gl::TextureFont::create(font);
     //textFont = gl::TextureFont::create(Font("Arial", 12));
     textBoundsRect = Rectf(0.f, SimpleGUI::textFont->getAscent(), getWindowWidth(), getWindowHeight());
     selectedControl = NULL;

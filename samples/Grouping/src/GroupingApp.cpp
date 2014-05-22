@@ -1,5 +1,6 @@
 #include "cinder/app/AppNative.h"
 #include "cinder/gl/FBO.h"
+#include "Resources.h"
 #include "SimpleGUI.h"
 #include <list>
 using namespace ci;
@@ -39,7 +40,7 @@ public:
 void GroupingApp::setup() {
 	fbo = gl::Fbo(getWindowWidth(), getWindowHeight());
 	
-	gui = new SimpleGUI(this);
+	gui = new SimpleGUI(this, Font(loadResource(RES_SGUI_FONT), 8));
 	gui->lightColor = ColorA(1, 1, 0, 1);	
 	gui->addColumn();
 	gui->addLabel("CONTROLS");

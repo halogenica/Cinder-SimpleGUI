@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cinder>
+<block
+	name="SimpleGUI"
+	id="org.libcinder.simplegui"
+	author="Michael Romero"
+	version="0.1"
+	>
+	<supports os="macosx" />
+	<supports os="msw" />
+	
+	<headerPattern>include/*.h</headerPattern>
+	<headerPattern>src/*.cpp</headerPattern>
+	
+	<includePath>include</includePath>
+	
+	<platform os="macosx">
+		<platform config="Debug">
+		</platform>
+		<platform config="Release">
+		</platform>		
+	</platform>
+	<platform os="msw">
+		<platform config="Debug">
+		</platform>
+		<platform config="Release">
+		</platform>
+	</platform>	
+</block>
+
+</cinder>

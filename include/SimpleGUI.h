@@ -32,6 +32,7 @@
 #include "cinder/app/AppNative.h"
 #include "cinder/app/TouchEvent.h"
 #include "cinder/Text.h"
+#include "cinder/Font.h"
 #include "cinder/gl/Texture.h"
 #include "cinder/gl/TextureFont.h"
 
@@ -62,8 +63,8 @@ private:
 	std::vector<Control*> controls;
 	Control* selectedControl;
 
-	void	init(App* app);
-    void    init(AppNative* app);
+	void	init(App* app, const Font& font);
+    void    init(AppNative* app, const Font& font);
 public:
 	static ColorA darkColor;
 	static ColorA lightColor;
@@ -82,8 +83,8 @@ public:
 		HSV
 	};
 public:
-	SimpleGUI(App* app);
-    SimpleGUI(AppNative* app);
+	SimpleGUI(App* app, const Font& font);
+    SimpleGUI(AppNative* app, const Font& font);
 	bool	isSelected() { return selectedControl != NULL; }
 	std::vector<Control*>& getControls() { return controls; }	
 	

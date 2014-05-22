@@ -1,5 +1,7 @@
 #include "cinder/app/AppNative.h"
 #include "cinder/gl/gl.h"
+#include "cinder/CinderResources.h"
+#include "Resources.h"
 #include "SimpleGUI.h"
 
 using namespace ci;
@@ -36,7 +38,7 @@ void ButtonsAndTexturesApp::setup() {
     rotation = 0;
     screenshot = gl::Texture(getWindowWidth(), getWindowHeight()); //uninitialized texture with random pixels from GPU memory
         
-    gui = new SimpleGUI(this);
+    gui = new SimpleGUI(this, Font(loadResource(RES_SGUI_FONT), 8));
 	gui->lightColor = ColorA(1, 1, 0, 1);		
 	gui->addLabel("CONTROLS");
     
