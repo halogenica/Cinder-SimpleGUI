@@ -208,6 +208,7 @@ class BoolVarControl : public Control {
 public:
 	bool* var;
 	int groupId;
+	CallbackMgr<void (void)>        callbacks;
 public:
 	BoolVarControl(const std::string& name, bool* var, bool defaultValue, int groupId);
 	Vec2f draw(Vec2f pos);	
@@ -215,6 +216,16 @@ public:
 	void fromString(std::string& strValue);
 	void onMouseDown(MouseEvent event);
     void onTouchesBegan(TouchEvent event);
+
+	//! Registers a callback for Click events. Returns a unique identifier which can be used as a parameter to unregisterClick().
+	CallbackId registerCallback( std::function<void (void)> callback ) { return callbacks.registerCb( callback ); }
+	//! Registers a callback for Click events. Returns a unique identifier which can be used as a parameter to unregisterClick().
+    template<typename T>
+	CallbackId registerCallback( T *obj, void (T::*callback)(void) ) { return callbacks.registerCb( std::bind( std::mem_fun( callback ), obj ) ); }
+	//! Unregisters a callback for Click events.
+	void unregisterCallback( CallbackId id ) { callbacks.unregisterCb( id ); }
+
+    void fireClick();
 };
 	
 //-----------------------------------------------------------------------------

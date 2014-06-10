@@ -593,6 +593,7 @@ void BoolVarControl::onMouseDown(MouseEvent event) {
 	}
 	else {
 		*this->var = ! *this->var;
+    	fireClick();
 	}
 }
 
@@ -606,7 +607,14 @@ void BoolVarControl::onTouchesBegan(TouchEvent event) {
     }
     else {
         *this->var = ! *this->var;
+    	fireClick();
     }
+}
+
+void BoolVarControl::fireClick() {
+	for( CallbackMgr<void (void)>::iterator cbIter = callbacks.begin(); ( cbIter != callbacks.end() ); ++cbIter ) {
+		(cbIter->second)( );
+	}
 }
     
 //-----------------------------------------------------------------------------
