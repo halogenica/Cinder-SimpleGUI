@@ -34,6 +34,9 @@
 #include "cinder/Utilities.h"
 #include "cinder/CinderMath.h"
 
+using namespace ci;
+using namespace ci::app;
+
 namespace mowa { namespace sgui {
 	
 //-----------------------------------------------------------------------------
