@@ -34,6 +34,9 @@
 #include "cinder/Utilities.h"
 #include "cinder/CinderMath.h"
 
+using namespace ci;
+using namespace ci::app;
+
 namespace mowa { namespace sgui {
 	
 //-----------------------------------------------------------------------------
@@ -412,7 +415,7 @@ Vec2f FloatVarControl::draw(Vec2f pos) {
 	);	
 	
 	gl::color(SimpleGUI::textColor);
-    SimpleGUI::textFont->drawStringWrapped(name, SimpleGUI::textBoundsRect, pos);
+	SimpleGUI::textFont->drawStringWrapped(name + " " + toString(), SimpleGUI::textBoundsRect, pos);
 	
 	gl::color(SimpleGUI::darkColor);
 	gl::drawSolidRect(activeArea);
@@ -501,7 +504,7 @@ Vec2f IntVarControl::draw(Vec2f pos) {
 					  );	
 	
 	gl::color(SimpleGUI::textColor);
-    SimpleGUI::textFont->drawStringWrapped(name, SimpleGUI::textBoundsRect, pos);
+	SimpleGUI::textFont->drawStringWrapped(name + " " + toString(), SimpleGUI::textBoundsRect, pos);
 	
 	gl::color(SimpleGUI::darkColor);
 	gl::drawSolidRect(activeArea);
